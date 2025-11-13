@@ -60,7 +60,7 @@ def GPT_response(text):
                         source = KNOWLEDGE_BASE_PATH
                         chunk_text = str(chunk)
                     context_parts.append(
-                        f"[資料{i + 1}] 來源: {source}\n{chunk_text}"
+                        f"資料{i + 1} 來源：{source}\n{chunk_text}"
                     )
                 context_text = "\n\n".join(context_parts)
                 context_messages.append(
