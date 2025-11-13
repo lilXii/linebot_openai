@@ -1,6 +1,7 @@
 ﻿from flask import Flask, request, abort
 import os
 import traceback
+import re
 
 print("DEBUG CHANNEL_ACCESS_TOKEN =", os.getenv("CHANNEL_ACCESS_TOKEN"))
 print("DEBUG CHANNEL_SECRET =", os.getenv("CHANNEL_SECRET"))
@@ -46,6 +47,13 @@ if ENABLE_RAG:
 
 
 def GPT_response(text):
+    def sanitize(text_value: str) -> str:
+        cleaned = text_value.replace("*", "").replace("`", "")
+        cleaned = re.sub(r"^\\s*[-*\\u2022]\\s+", "", cleaned, flags=re.MULTILINE)
+        cleaned = re.sub(r"^\s*\d+\.\s+", "", cleaned, flags=re.MULTILINE)
+        cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+        return cleaned.strip()
+
     context_messages = []
     if rag_store:
         try:
@@ -89,7 +97,7 @@ def GPT_response(text):
     )
     print(response)
     answer = response['choices'][0]['message']['content'].strip()
-    return answer
+    return sanitize(answer)
 
 
 @app.route("/callback", methods=['POST'])
@@ -134,3 +142,5 @@ def welcome(event):
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
+
