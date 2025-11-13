@@ -49,7 +49,7 @@ if ENABLE_RAG:
 def GPT_response(text):
     def sanitize(text_value: str) -> str:
         cleaned = text_value.replace("*", "").replace("`", "")
-        cleaned = re.sub(r"^\\s*[-*\\u2022]\\s+", "", cleaned, flags=re.MULTILINE)
+        cleaned = re.sub(r"^\s*[-*\u2022]\s+", "", cleaned, flags=re.MULTILINE)
         cleaned = re.sub(r"^\s*\d+\.\s+", "", cleaned, flags=re.MULTILINE)
         cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
         return cleaned.strip()
@@ -142,5 +142,6 @@ def welcome(event):
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
 
 
