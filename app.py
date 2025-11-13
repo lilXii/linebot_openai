@@ -1,5 +1,9 @@
 from flask import Flask, request, abort
 
+print("DEBUG CHANNEL_ACCESS_TOKEN =", os.getenv("CHANNEL_ACCESS_TOKEN"))
+print("DEBUG CHANNEL_SECRET =", os.getenv("CHANNEL_SECRET"))
+print("DEBUG OPENAI_API_KEY =", os.getenv("OPENAI_API_KEY"))
+
 from linebot import (
     LineBotApi, WebhookHandler
 )
