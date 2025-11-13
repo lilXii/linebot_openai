@@ -1,4 +1,5 @@
 from flask import Flask, request, abort
+import os
 
 print("DEBUG CHANNEL_ACCESS_TOKEN =", os.getenv("CHANNEL_ACCESS_TOKEN"))
 print("DEBUG CHANNEL_SECRET =", os.getenv("CHANNEL_SECRET"))
