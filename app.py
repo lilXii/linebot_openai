@@ -27,16 +27,63 @@ openai.api_key = os.getenv('OPENAI_API_KEY')
 SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT", "You are a helpful assistant for LINE users.")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 OPENAI_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
-OPENAI_MAX_TOKENS = int(os.getenv("OPENAI_MAX_TOKENS", "500"))
+OPENAI_MAX_TOKENS = int(os.getenv("OPENAI_MAX_TOKENS", "1000"))
+ENABLE_RAG = os.getenv("ENABLE_RAG", "true").lower() == "true"
+KNOWLEDGE_BASE_PATH = os.getenv("KNOWLEDGE_BASE_PATH", "data/knowledge_base.jsonl")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+RAG_TOP_K = int(os.getenv("RAG_TOP_K", "3"))
+
+rag_store = None
+if ENABLE_RAG:
+    try:
+        from rag_utils import RAGStore
+
+        rag_store = RAGStore(KNOWLEDGE_BASE_PATH, EMBEDDING_MODEL)
+    except Exception:
+        print("Failed to initialize RAG store")
+        print(traceback.format_exc())
+        rag_store = None
 
 
 def GPT_response(text):
+    context_messages = []
+    if rag_store:
+        try:
+            chunks = rag_store.retrieve(text, top_k=RAG_TOP_K)
+            if chunks:
+                context_parts = []
+                for i, chunk in enumerate(chunks):
+                    if isinstance(chunk, dict):
+                        source = chunk.get("doc_path") or "N/A"
+                        chunk_text = chunk.get("text", "")
+                    else:
+                        source = KNOWLEDGE_BASE_PATH
+                        chunk_text = str(chunk)
+                    context_parts.append(
+                        f"[資料{i + 1}] 來源: {source}\n{chunk_text}"
+                    )
+                context_text = "\n\n".join(context_parts)
+                context_messages.append(
+                    {
+                        "role": "system",
+                        "content": (
+                            "以下為檢索到的參考資料，回答時請優先使用這些內容，"
+                            "若資料不足請誠實告知：\n"
+                            f"{context_text}"
+                        ),
+                    }
+                )
+        except Exception:
+            print("RAG retrieve failed")
+            print(traceback.format_exc())
+
     response = openai.ChatCompletion.create(
         model=OPENAI_MODEL,
         temperature=OPENAI_TEMPERATURE,
         max_tokens=OPENAI_MAX_TOKENS,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
+            *context_messages,
             {"role": "user", "content": text},
         ],
     )
